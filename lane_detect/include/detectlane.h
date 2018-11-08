@@ -24,7 +24,7 @@ public:
     vector<Point> getLeftLane();
     vector<Point> getRightLane();
 
-    static int slideThickness;
+    static int slideThickness;  // have to tuning
 
     static int BIRDVIEW_WIDTH;
     static int BIRDVIEW_HEIGHT;
@@ -45,7 +45,7 @@ private:
     void detectLeftRight(const vector<vector<Point> > &points);
     Mat laneInShadow(const Mat &src);
 
-    int minThreshold[3] = {45, 0, 160};
+    int minThreshold[3] = {45, 0, 190};
     int maxThreshold[3] = {160, 100, 255};
     
     int minShadowTh[3] = {90, 43, 36};

@@ -16,7 +16,7 @@ DetectLane::DetectLane() {
    
     cvCreateTrackbar("getPerspectiveVar", "Threshold", &birdViewvar, 200);
 
-    cvCreateTrackbar("LowH", "Threshold", &minThreshold[0], 179);
+    cvCreateTrackbar("LowH", "Threshold", &minThreshold[0], 179); //(Varname, Windowname, currentval, maxval)
     cvCreateTrackbar("HighH", "Threshold", &maxThreshold[0], 179);
 
     cvCreateTrackbar("LowS", "Threshold", &minThreshold[1], 255);
@@ -50,11 +50,11 @@ void DetectLane::update(const Mat &src)
     //std::cout<<"Mat: "<<img.size()<<std::endl; //(size:240x320)
     
     vector<Mat> layers1 = splitLayer(img); //img = dst 
-    vector<vector<Point> > points1 = centerRoadSide(layers1);
+    vector<vector<Point> > points1 = centerRoadSide(layers1);  //get center if each contours region
     // vector<Mat> layers2 = splitLayer(img, HORIZONTAL);
     // vector<vector<Point> > points2 = centerRoadSide(layers2, HORIZONTAL);
 
-    detectLeftRight(points1);
+    detectLeftRight(points1); // to detect left,right lane center points
 
     Mat birdView, lane;
     //birdView = Mat::zeros(img.size(), CV_8UC3);
@@ -99,7 +99,6 @@ void DetectLane::update(const Mat &src)
 Mat DetectLane::preProcess(const Mat &src)
 {
     Mat imgThresholded, imgHSV, dst;
-
     cvtColor(src, imgHSV, COLOR_BGR2HSV);
     //int minThreshold[3] = {0, 0, 180};
     //int maxThreshold[3] = {179, 30, 255};
@@ -107,6 +106,7 @@ Mat DetectLane::preProcess(const Mat &src)
         Scalar(maxThreshold[0], maxThreshold[1], maxThreshold[2]), 
         imgThresholded);
 
+    GaussianBlur(imgThresholded,imgThresholded, Size(5, 5), 0,0); //Blurring to reduce high frequency noise 
     dst = birdViewTranform(imgThresholded);
 
     imshow("Bird View", dst);
@@ -185,27 +185,39 @@ vector<Mat> DetectLane::splitLayer(const Mat &src, int dir) //vector<Mat> splitL
 vector<vector<Point> > DetectLane::centerRoadSide(const vector<Mat> &src, int dir)
 {
     vector<std::vector<Point> > res;
-    int inputN = src.size();
+    int inputN = src.size(); //number of sub Mattrixs
     for (int i = 0; i < inputN; i++) {
-        std::vector<std::vector<Point> > cnts;
-        std::vector<Point> tmp;
-        findContours(src[i], cnts, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
-        int cntsN = cnts.size();
+        std::vector<std::vector<Point> > cnts; //each cnts[i] is one object boundary
+        std::vector<Point> tmp; //tmp = [0,0]
+
+        
+
+        findContours(src[i], cnts, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));  //return the set of outlines
+        
+        int cntsN = cnts.size(); //a number of object // cnts : vector<vector<Point>>
+        
+        //if 0 contour
         if (cntsN == 0) {
-            res.push_back(tmp);
+            res.push_back(tmp);//push_back(vector<Point>)
             continue;
         }
+        
 
         for (int j = 0; j < cntsN; j++) {
-            int area = contourArea(cnts[j], false);
+            int area = contourArea(cnts[j], false); //area of one object boundary
             if (area > 3) {
-                Moments M1 = moments(cnts[j], false);
+                        
+                // detemine center of each region
+                Moments M1 = moments(cnts[j], false); //moment of each contours. false parameter sets for vector<Point> input parameter
                 Point2f center1 = Point2f(static_cast<float> (M1.m10 / M1.m00), static_cast<float> (M1.m01 / M1.m00));
-                if (dir == VERTICAL) {
-                    center1.y = center1.y + slideThickness*i;
+                // have center1 of one lane
+
+                if (dir == VERTICAL) { //??????????
+                    center1.y = center1.y + slideThickness*i; // to get exactly centers of a full input Mat
                 } 
-                else
-                {
+                
+                ///////////////
+                else {
                     center1.x = center1.x + slideThickness*i;
                 }
                 if (center1.x > 0 && center1.y > 0) {
@@ -213,13 +225,14 @@ vector<vector<Point> > DetectLane::centerRoadSide(const vector<Mat> &src, int di
                 }
             }
         }
+        //tmp is 
         res.push_back(tmp);
     }
 
-    return res;
+    return res; //rec[i] is a vector<Point> which is centers of all contours
 }
 
-void DetectLane::detectLeftRight(const vector<vector<Point> > &points)
+void DetectLane::detectLeftRight(const vector<vector<Point> > &points) //vector<vector<Point> > points1 = centerRoadSide(layers1);
 {
     static vector<Point> lane1, lane2;
     lane1.clear();
@@ -227,13 +240,15 @@ void DetectLane::detectLeftRight(const vector<vector<Point> > &points)
     
     leftLane.clear();
     rightLane.clear();
+    //int DetectLane::BIRDVIEW_WIDTH = 240;
+    //int DetectLane::BIRDVIEW_HEIGHT = 320;
     for (int i = 0; i < BIRDVIEW_HEIGHT / slideThickness; i ++)
     {
         leftLane.push_back(null);
         rightLane.push_back(null);
     }
 
-    int pointMap[points.size()][20];
+    int pointMap[points.size()][20];  //points.size() = the number of subMat
     int prePoint[points.size()][20];
     int postPoint[points.size()][20];
     int dis = 10;
