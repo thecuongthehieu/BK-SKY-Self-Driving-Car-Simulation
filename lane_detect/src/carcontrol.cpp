@@ -38,15 +38,16 @@ void CarControl::driverCar(const vector<Point> &left, const vector<Point> &right
     }
     if (left[i] != DetectLane::null && right[i] !=  DetectLane::null)
     {
+        //std::cout<<(right[i]-left[i])<<std::endl;
         error = errorAngle((left[i] + right[i]) / 2);
     } 
     else if (left[i] != DetectLane::null)
     {
-        error = errorAngle(left[i] + Point(laneWidth / 4, 0));
+        error = errorAngle(left[i] + Point(laneWidth / 3, 0));  //Need to tunning
     }
     else
     {
-        error = errorAngle(right[i] - Point(laneWidth / 4, 0));
+        error = errorAngle(right[i] - Point(laneWidth / 3, 0));
     }
 
     std_msgs::Float32 angle;

@@ -25,11 +25,12 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     {
         cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
         cv::imshow("View", cv_ptr->image);
+        //std::cout<<cv_ptr->image<<std::endl;
         //std::cout<<cv_ptr->image.size()<<std::endl;
         waitKey(1);  // time of showing each frame
         detect->update(cv_ptr->image);  //cv_ptr-> image (320x240) is input Mat of detectlane
         // after update vector (size =32) left and right point so call driverCar to control car
-        car->driverCar(detect->getLeftLane(), detect->getRightLane(), 45);
+        car->driverCar(detect->getLeftLane(), detect->getRightLane(), 50);
     }
     catch (cv_bridge::Exception& e)
     {
@@ -60,6 +61,7 @@ int main(int argc, char **argv)
     cv::namedWindow("Threshold");
     cv::namedWindow("Bird View");
     cv::namedWindow("Lane Detect");
+    cv::namedWindow("Sign");
 
     detect = new DetectLane();
     car = new CarControl();

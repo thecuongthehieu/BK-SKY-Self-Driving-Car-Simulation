@@ -29,6 +29,7 @@ include_directories(
 add_library(api_lane_detection
   src/detectlane.cpp
   src/carcontrol.cpp
+  src/detectsign.cpp
 )
 
 add_executable(lane_detect src/main.cpp)

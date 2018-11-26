@@ -23,7 +23,8 @@ int DetectSign::updateSign(const Mat &src)
     Mat circleImg = detectCircle(src);
     //cv::imshow("Circle",circleImg);
     Mat arrowImg = arrowRegion(circleImg);
-    int signType = identifySign(arrowImg);
+    int signType =100;
+    signType = identifySign(arrowImg);
     return signType;
 }
 
@@ -57,20 +58,20 @@ Mat DetectSign::detectCircle(const Mat &src)
         }
     }
 
-    int t = 240, d = 0, l = 320, r = 0;
+    int t = 239, d = 0, l = 319, r = 0;
 
     if(circleCnt.size() > 0)
     {
         for(int i = 0; i < circleCnt.size(); i++)
             {
                 if(circleCnt[i].x < l)
-                    l = circleCnt[i].x-1;
+                    l = circleCnt[i].x;
                 if(circleCnt[i].x > r)
-                    r = circleCnt[i].x+1;
+                    r = circleCnt[i].x;
                 if(circleCnt[i].y < t)
-                    t = circleCnt[i].y-1;
+                    t = circleCnt[i].y;
                 if(circleCnt[i].y > d)
-                    d = circleCnt[i].y+1;
+                    d = circleCnt[i].y;
             }
         Rect roi(l,t,r-l,d-t);
         circleImg = Mat(src,roi);

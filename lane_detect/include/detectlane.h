@@ -10,6 +10,8 @@
 #include <math.h>
 #include <algorithm>
 
+#include "detectsign.h"
+
 using namespace std;
 using namespace cv;
 
@@ -56,12 +58,14 @@ private:
     
     int binaryThreshold = 180;
 
-    int skyLine = 85;
-    int shadowParam = 40;
+    int skyLine = 105; // Region of interesting
+    int shadowParam = 40; // check
 
-    int birdViewvar = 100; // to track Bird View
+    int birdViewvar = 93; // to track Bird View transform
 
     vector<Point> leftLane, rightLane;
+    //vector<Point> leftLane1, rightLane1;
+    //vector<Point> leftLane2, rightLane2;
 };
 
 #endif

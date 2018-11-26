@@ -32,7 +32,7 @@ private:
 
     Point carPos;
 
-    float laneWidth = 50; // need to have track laneWidth func
+    float laneWidth = 70; // need to have track laneWidth func
 
     float minVelocity = 10;
     float maxVelocity = 50;

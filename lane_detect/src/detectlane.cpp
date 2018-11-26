@@ -14,9 +14,12 @@ Point DetectLane::null = Point();
 
 DetectLane::DetectLane() {
    
-    cvCreateTrackbar("getPerspectiveVar", "Threshold", &birdViewvar, 200);
+    cvCreateTrackbar("getPerspectiveVar", "Threshold", &birdViewvar, 200); //add 
+    cvCreateTrackbar("skyLine", "Threshold", &skyLine, 320); //add
 
-    cvCreateTrackbar("LowH", "Threshold", &minThreshold[0], 179); //(Varname, Windowname, currentval, maxval)
+
+
+    cvCreateTrackbar("LowH", "Threshold", &minThreshold[0], 179); //(Varname, Windowname, currentval, maxval) 
     cvCreateTrackbar("HighH", "Threshold", &maxThreshold[0], 179);
 
     cvCreateTrackbar("LowS", "Threshold", &minThreshold[1], 255);
@@ -24,8 +27,6 @@ DetectLane::DetectLane() {
 
     cvCreateTrackbar("LowV", "Threshold", &minThreshold[2], 255);
     cvCreateTrackbar("HighV", "Threshold", &maxThreshold[2], 255);
-
-    cvCreateTrackbar("LowH", "Threshold", &skyLine, 179);
 
     cvCreateTrackbar("Shadow Param", "Threshold", &shadowParam, 255);
 
@@ -46,6 +47,11 @@ vector<Point> DetectLane::getRightLane()
 void DetectLane::update(const Mat &src)
 {
     //std::cout<<"src: "<<src.size()<<std::endl; //(size:320x240)
+    DetectSign *sign;
+    sign = new DetectSign();
+    int signType = sign -> updateSign(src);
+    std::cout<<signType<<std::endl;
+
     Mat img = preProcess(src);  //img = dst = birdViewTranform(imgThresholded);
     //std::cout<<"Mat: "<<img.size()<<std::endl; //(size:240x320)
     
@@ -55,6 +61,19 @@ void DetectLane::update(const Mat &src)
     // vector<vector<Point> > points2 = centerRoadSide(layers2, HORIZONTAL);
 
     detectLeftRight(points1); // to detect left,right lane center points
+
+
+    //check if we have long laneinshadow
+    int i = leftLane.size()-11;
+    while(leftLane[i] == null && rightLane[i] == null){
+        i--;
+        if (i < 0){         //track val = 0
+            Mat img2 = laneInShadow(src); 
+            vector<Mat> layers2 = splitLayer(img2);
+            vector<vector<Point> > points2 = centerRoadSide(layers2); 
+            detectLeftRight(points2); 
+        }
+    }
 
     Mat birdView, lane;
     //birdView = Mat::zeros(img.size(), CV_8UC3);
@@ -100,13 +119,28 @@ Mat DetectLane::preProcess(const Mat &src)
 {
     Mat imgThresholded, imgHSV, dst;
     cvtColor(src, imgHSV, COLOR_BGR2HSV);
+    imshow("imgHSV",imgHSV);
     //int minThreshold[3] = {0, 0, 180};
     //int maxThreshold[3] = {179, 30, 255};
     inRange(imgHSV, Scalar(minThreshold[0], minThreshold[1], minThreshold[2]), 
         Scalar(maxThreshold[0], maxThreshold[1], maxThreshold[2]), 
         imgThresholded);
 
+    //imgThresholded = laneInShadow(src);
     GaussianBlur(imgThresholded,imgThresholded, Size(5, 5), 0,0); //Blurring to reduce high frequency noise 
+    
+    //imgThresholded = laneInShadow(imgThresholded);//
+    //fillLane(imgThresholded);
+
+    /*int erosion_size = 2;
+    Mat element = getStructuringElement(cv::MORPH_CROSS,
+              cv::Size(2 * erosion_size + 1, 2 * erosion_size + 1),
+              cv::Point(erosion_size, erosion_size) );
+
+    // Apply erosion or dilation on the image
+    erode(imgThresholded,imgThresholded,element);*/
+
+
     dst = birdViewTranform(imgThresholded);
 
     imshow("Bird View", dst);
@@ -122,18 +156,31 @@ Mat DetectLane::laneInShadow(const Mat &src)
 {
     Mat shadowMask, shadow, imgHSV, shadowHSV, laneShadow;
     cvtColor(src, imgHSV, COLOR_BGR2HSV);
+    //imshow("imgHSV",imgHSV);//
 
     inRange(imgHSV, Scalar(minShadowTh[0], minShadowTh[1], minShadowTh[2]),
     Scalar(maxShadowTh[0], maxShadowTh[1], maxShadowTh[2]),  
     shadowMask);
 
+    //imshow("shadowMask", shadowMask);// CV_8U: Grayscale
+
     src.copyTo(shadow, shadowMask);
 
+    //imshow("shadow",shadow);// CV_8UC3 : BGR with 3 chanels
+    
+
     cvtColor(shadow, shadowHSV, COLOR_BGR2HSV);
+    //GaussianBlur(imgThresholded,imgThresholded, Size(5, 5), 0,0); //add
+    //imshow("shadowHSV", shadowHSV);//
 
     inRange(shadowHSV, Scalar(minLaneInShadow[0], minLaneInShadow[1], minLaneInShadow[2]), 
         Scalar(maxLaneInShadow[0], maxLaneInShadow[1], maxLaneInShadow[2]), 
         laneShadow);
+
+
+    GaussianBlur(laneShadow,laneShadow, Size(5, 5), 0,0);
+    //imshow("laneShadow",laneShadow);//
+    laneShadow = birdViewTranform(laneShadow);
 
     return laneShadow;
 }
@@ -205,7 +252,7 @@ vector<vector<Point> > DetectLane::centerRoadSide(const vector<Mat> &src, int di
 
         for (int j = 0; j < cntsN; j++) {
             int area = contourArea(cnts[j], false); //area of one object boundary
-            if (area > 3) {
+            if (area > 3) { // check val = 3
                         
                 // detemine center of each region
                 Moments M1 = moments(cnts[j], false); //moment of each contours. false parameter sets for vector<Point> input parameter
@@ -220,7 +267,7 @@ vector<vector<Point> > DetectLane::centerRoadSide(const vector<Mat> &src, int di
                 else {
                     center1.x = center1.x + slideThickness*i;
                 }
-                if (center1.x > 0 && center1.y > 0) {
+                if (center1.x > 0 && center1.y > 0) { 
                     tmp.push_back(center1);
                 }
             }
@@ -228,6 +275,8 @@ vector<vector<Point> > DetectLane::centerRoadSide(const vector<Mat> &src, int di
         //tmp is 
         res.push_back(tmp);
     }
+
+    //std::cout<<"res_size: "<<res[4].size()<<std::endl;
 
     return res; //rec[i] is a vector<Point> which is centers of all contours
 }
@@ -267,9 +316,9 @@ void DetectLane::detectLeftRight(const vector<vector<Point> > &points) //vector<
         }
     }
 
-    for (int i = points.size() - 2; i >= 0; i--)
+    for (int i = points.size() - 2; i >= 0; i--)//points.size() = the number of subMat
     {
-        for (int j = 0; j < points[i].size(); j++)
+        for (int j = 0; j < points[i].size(); j++) // points[i] : vector of all the centroids
         {
             int err = 320;
             for (int m = 1; m < min(points.size() - 1 - i, 5); m++)
@@ -332,17 +381,24 @@ void DetectLane::detectLeftRight(const vector<vector<Point> > &points) //vector<
         
         max2--;
     }
+
+    //we have exactly vector<Point> lane1, lane2 
+
     
-    vector<Point> subLane1(lane1.begin(), lane1.begin() + 5);
+    vector<Point> subLane1(lane1.begin(), lane1.begin() + 5); // check val = 5
     vector<Point> subLane2(lane2.begin(), lane2.begin() + 5);
 
-    Vec4f line1, line2;
+    Vec4f line1, line2;  //(a,b,c,d)
 
-    fitLine(subLane1, line1, 2, 0, 0.01, 0.01);
+    fitLine(subLane1, line1, 2, 0, 0.01, 0.01); //
     fitLine(subLane2, line2, 2, 0, 0.01, 0.01);
 
-    int lane1X = (BIRDVIEW_WIDTH - line1[3]) * line1[0] / line1[1] + line1[2];
+    //int DetectLane::BIRDVIEW_WIDTH = 240;
+    //int DetectLane::BIRDVIEW_HEIGHT = 320;
+
+    int lane1X = (BIRDVIEW_WIDTH - line1[3]) * line1[0] / line1[1] + line1[2]; //????
     int lane2X = (BIRDVIEW_WIDTH - line2[3]) * line2[0] / line2[1] + line2[2];
+
 
     if (lane1X < lane2X)
     {
@@ -415,6 +471,8 @@ Mat DetectLane::birdViewTranform(const Mat &src) //input:imgThresholded (size:32
     //int DetectLane::BIRDVIEW_WIDTH = 240;
     //int DetectLane::BIRDVIEW_HEIGHT = 320;
     warpPerspective(src, dst, M, dst.size(), INTER_LINEAR, BORDER_CONSTANT);
+
+    
 
     return dst;
 }
