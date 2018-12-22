@@ -73,8 +73,11 @@ Mat DetectSign::detectCircle(const Mat &src)
                 if(circleCnt[i].y > d)
                     d = circleCnt[i].y;
             }
-        Rect roi(l,t,r-l,d-t);
-        circleImg = Mat(src,roi);
+        if((r-l)*(d-t) > 500) //check S(circleCnt)
+            {
+                Rect roi(l,t,r-l,d-t);
+                circleImg = Mat(src,roi);
+            }
     }
     return circleImg;
 }
@@ -121,11 +124,11 @@ Mat DetectSign::arrowRegion(const Mat &circleImg)
 }
 int DetectSign::identifySign(const Mat &arrowImg)
 {
-    std::vector<string> signsTable(4);
+    std::vector<string> signsTable(2);
     signsTable[0] = "0110"; //RIGHT
-    signsTable[1] = "1110"; //RIGHT
-    signsTable[2] = "1001"; //LEFT
-    signsTable[3] = "1101"; //LEFT
+    //ignsTable[1] = "1110"; //RIGHT
+    signsTable[1] = "1001"; //LEFT
+    //signsTable[3] = "1101"; //LEFT
 
     int signType = 3; //unknown
 
@@ -170,10 +173,10 @@ int DetectSign::identifySign(const Mat &arrowImg)
 
         string signLookup;
 
-        lt > SIGNTHRESHOLD ? signLookup += string("1") : signLookup += string("0");
-        rt> SIGNTHRESHOLD ? signLookup += string("1") : signLookup += string("0");
-        ld > SIGNTHRESHOLD ? signLookup += string("1") : signLookup += string("0");
-        rd > SIGNTHRESHOLD ? signLookup += string("1") : signLookup += string("0");
+        lt > TOPTHRESHOLD ? signLookup += string("1") : signLookup += string("0");
+        rt> TOPTHRESHOLD ? signLookup += string("1") : signLookup += string("0");
+        ld > DOWNTHRESHOLD ? signLookup += string("1") : signLookup += string("0");
+        rd > DOWNTHRESHOLD ? signLookup += string("1") : signLookup += string("0");
 
         //cout<< signLookup <<endl;
 
@@ -181,7 +184,7 @@ int DetectSign::identifySign(const Mat &arrowImg)
             {
                 if(signLookup == signsTable[i])
                     {
-                        if(i == 0 || i ==1)
+                        if(i == 0)
                             signType = 0; //RIGHT
                         else
                             signType = 1; //LEFT

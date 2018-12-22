@@ -28,6 +28,16 @@ DetectLane::DetectLane() {
     cvCreateTrackbar("LowV", "Threshold", &minThreshold[2], 255);
     cvCreateTrackbar("HighV", "Threshold", &maxThreshold[2], 255);
 
+
+    cvCreateTrackbar("Low2H", "Threshold", &minLaneInShadow[0], 179); //(Varname, Windowname, currentval, maxval) 
+    cvCreateTrackbar("High2H", "Threshold", &maxLaneInShadow[0], 179);
+
+    cvCreateTrackbar("Low2S", "Threshold", &minLaneInShadow[1], 255);
+    cvCreateTrackbar("High2S", "Threshold", &maxLaneInShadow[1], 255);
+
+    cvCreateTrackbar("Low2V", "Threshold", &minLaneInShadow[2], 255);
+    cvCreateTrackbar("High2V", "Threshold", &maxLaneInShadow[2], 255);
+
     cvCreateTrackbar("Shadow Param", "Threshold", &shadowParam, 255);
 
 }
@@ -46,34 +56,16 @@ vector<Point> DetectLane::getRightLane()
 
 void DetectLane::update(const Mat &src)
 {
-    //std::cout<<"src: "<<src.size()<<std::endl; //(size:320x240)
-    DetectSign *sign;
-    sign = new DetectSign();
-    int signType = sign -> updateSign(src);
-    std::cout<<signType<<std::endl;
-
+    //std::cout<<"src: "<<src.channels()<<std::endl; //(size:320x240)
     Mat img = preProcess(src);  //img = dst = birdViewTranform(imgThresholded);
     //std::cout<<"Mat: "<<img.size()<<std::endl; //(size:240x320)
-    
-    vector<Mat> layers1 = splitLayer(img); //img = dst 
+
+    vector<Mat> layers1 = splitLayer(img); //img = dst
     vector<vector<Point> > points1 = centerRoadSide(layers1);  //get center if each contours region
     // vector<Mat> layers2 = splitLayer(img, HORIZONTAL);
     // vector<vector<Point> > points2 = centerRoadSide(layers2, HORIZONTAL);
 
     detectLeftRight(points1); // to detect left,right lane center points
-
-
-    //check if we have long laneinshadow
-    int i = leftLane.size()-11;
-    while(leftLane[i] == null && rightLane[i] == null){
-        i--;
-        if (i < 0){         //track val = 0
-            Mat img2 = laneInShadow(src); 
-            vector<Mat> layers2 = splitLayer(img2);
-            vector<vector<Point> > points2 = centerRoadSide(layers2); 
-            detectLeftRight(points2); 
-        }
-    }
 
     Mat birdView, lane;
     //birdView = Mat::zeros(img.size(), CV_8UC3);
@@ -97,6 +89,7 @@ void DetectLane::update(const Mat &src)
 
     // imshow("Debug", birdView);
     // Draw a Lane Detect view
+
     for (int i = 1; i < leftLane.size(); i++)
     {
         if (leftLane[i] != null)
@@ -119,28 +112,34 @@ Mat DetectLane::preProcess(const Mat &src)
 {
     Mat imgThresholded, imgHSV, dst;
     cvtColor(src, imgHSV, COLOR_BGR2HSV);
-    imshow("imgHSV",imgHSV);
+    //imshow("imgHSV",imgHSV);
     //int minThreshold[3] = {0, 0, 180};
     //int maxThreshold[3] = {179, 30, 255};
-    inRange(imgHSV, Scalar(minThreshold[0], minThreshold[1], minThreshold[2]), 
-        Scalar(maxThreshold[0], maxThreshold[1], maxThreshold[2]), 
-        imgThresholded);
+    inRange(imgHSV, Scalar(minThreshold[0], minThreshold[1], minThreshold[2]),
+        Scalar(maxThreshold[0], maxThreshold[1], maxThreshold[2]),
+        imgThresholded);   //Img 0 or 255
 
     //imgThresholded = laneInShadow(src);
-    GaussianBlur(imgThresholded,imgThresholded, Size(5, 5), 0,0); //Blurring to reduce high frequency noise 
-    
-    //imgThresholded = laneInShadow(imgThresholded);//
-    //fillLane(imgThresholded);
 
-    /*int erosion_size = 2;
-    Mat element = getStructuringElement(cv::MORPH_CROSS,
-              cv::Size(2 * erosion_size + 1, 2 * erosion_size + 1),
-              cv::Point(erosion_size, erosion_size) );
-
-    // Apply erosion or dilation on the image
-    erode(imgThresholded,imgThresholded,element);*/
+    imshow("Lane Norm", imgThresholded);
 
 
+    //Combine 2 IMG to have full Lane
+    Mat laneShadow = laneInShadow(src);
+    imshow("Lane Shadow", laneShadow);
+    for(int i = 0; i < imgThresholded.rows; i++)
+        for(int j = 0; j < imgThresholded.cols; j++)
+            {
+                //std::cout<<"i = "<<i<<"  j = "<<j<<std::endl;
+                //std::cout<<int(imgThresholded.at<uchar>(i,j))<<std::endl;
+                bool tmp = bool(int(imgThresholded.at<uchar>(i,j)));
+                if(tmp == false)
+                    imgThresholded.at<uchar>(i,j) = laneShadow.at<uchar>(i,j);
+            }
+
+
+
+    GaussianBlur(imgThresholded,imgThresholded, Size(5, 5), 0,0); //Blurring to reduce high frequency noise
     dst = birdViewTranform(imgThresholded);
 
     imshow("Bird View", dst);
@@ -154,36 +153,22 @@ Mat DetectLane::preProcess(const Mat &src)
 
 Mat DetectLane::laneInShadow(const Mat &src)
 {
-    Mat shadowMask, shadow, imgHSV, shadowHSV, laneShadow;
+    Mat laneShadow, imgHSV, dst;
     cvtColor(src, imgHSV, COLOR_BGR2HSV);
-    //imshow("imgHSV",imgHSV);//
+    imshow("imgHSV",imgHSV);
 
-    inRange(imgHSV, Scalar(minShadowTh[0], minShadowTh[1], minShadowTh[2]),
-    Scalar(maxShadowTh[0], maxShadowTh[1], maxShadowTh[2]),  
-    shadowMask);
-
-    //imshow("shadowMask", shadowMask);// CV_8U: Grayscale
-
-    src.copyTo(shadow, shadowMask);
-
-    //imshow("shadow",shadow);// CV_8UC3 : BGR with 3 chanels
-    
-
-    cvtColor(shadow, shadowHSV, COLOR_BGR2HSV);
-    //GaussianBlur(imgThresholded,imgThresholded, Size(5, 5), 0,0); //add
-    //imshow("shadowHSV", shadowHSV);//
-
-    inRange(shadowHSV, Scalar(minLaneInShadow[0], minLaneInShadow[1], minLaneInShadow[2]), 
-        Scalar(maxLaneInShadow[0], maxLaneInShadow[1], maxLaneInShadow[2]), 
+    inRange(imgHSV, Scalar(minLaneInShadow[0], minLaneInShadow[1], minLaneInShadow[2]),
+        Scalar(maxLaneInShadow[0], maxLaneInShadow[1], maxLaneInShadow[2]),
         laneShadow);
 
+    //GaussianBlur(laneShadow,laneShadow, Size(5, 5), 0,0); //Blurring to reduce high frequency noise
 
-    GaussianBlur(laneShadow,laneShadow, Size(5, 5), 0,0);
     //imshow("laneShadow",laneShadow);//
-    laneShadow = birdViewTranform(laneShadow);
+    //laneShadow = birdViewTranform(laneShadow);
 
     return laneShadow;
 }
+
 
 void DetectLane::fillLane(Mat &src)
 {
@@ -476,4 +461,3 @@ Mat DetectLane::birdViewTranform(const Mat &src) //input:imgThresholded (size:32
 
     return dst;
 }
-

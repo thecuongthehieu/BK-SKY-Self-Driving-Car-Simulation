@@ -30,7 +30,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         waitKey(1);  // time of showing each frame
         detect->update(cv_ptr->image);  //cv_ptr-> image (320x240) is input Mat of detectlane
         // after update vector (size =32) left and right point so call driverCar to control car
-        car->driverCar(detect->getLeftLane(), detect->getRightLane(), 50);
+        car->driverCar(detect->getLeftLane(), detect->getRightLane(), 40);
     }
     catch (cv_bridge::Exception& e)
     {

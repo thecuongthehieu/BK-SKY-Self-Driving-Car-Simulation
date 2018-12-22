@@ -35,7 +35,8 @@ private:
 
     int circleSize = 64; // scale size
     int arrowSize = 40;  // scale size
-    int SIGNTHRESHOLD = 17000;   // Threshold of sum of each region
+    int TOPTHRESHOLD = 44000;   // Threshold of sum of each region
+    int DOWNTHRESHOLD = 21000;
 
 };
 

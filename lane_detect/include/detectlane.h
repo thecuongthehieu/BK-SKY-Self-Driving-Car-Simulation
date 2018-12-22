@@ -47,14 +47,15 @@ private:
     void detectLeftRight(const vector<vector<Point> > &points);
     Mat laneInShadow(const Mat &src);
 
-    int minThreshold[3] = {45, 0, 190};
-    int maxThreshold[3] = {160, 100, 255};
+
+    int minThreshold[3] = {80, 0, 215};
+    int maxThreshold[3] = {127, 255, 255};
     
-    int minShadowTh[3] = {90, 43, 36};
-    int maxShadowTh[3] = {120, 81, 171};
-    
-    int minLaneInShadow[3] = {90, 43, 97};
-    int maxLaneInShadow[3] = {120, 80, 171};
+    //int minShadowTh[3] = {90, 43, 36};
+    //int maxShadowTh[3] = {120, 81, 171};
+
+    int minLaneInShadow[3] = {100, 55,110};
+    int maxLaneInShadow[3] = {255, 255, 255};
     
     int binaryThreshold = 180;
 
@@ -64,8 +65,8 @@ private:
     int birdViewvar = 93; // to track Bird View transform
 
     vector<Point> leftLane, rightLane;
-    //vector<Point> leftLane1, rightLane1;
-    //vector<Point> leftLane2, rightLane2;
+    vector<Point> leftLaneShadow, rightLaneShadow;
+
 };
 
 #endif
