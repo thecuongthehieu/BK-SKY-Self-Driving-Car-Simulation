@@ -20,10 +20,12 @@ class CarControl
 public:
     CarControl();
     ~CarControl();
-    void driverCar(const vector<Point> &left, const vector<Point> &right, float velocity);
+    void driverCar(const vector<Point> &left, const vector<Point> &right, float velocity, int st, float area);
+	float getVelocity(const vector<Point>& leftLane, const vector<Point>& rightLane, bool flag);
 
 private:
     float errorAngle(const Point &dst);
+	bool checkTurningPoint();
     ros::NodeHandle node_obj1;
     ros::NodeHandle node_obj2;
     
@@ -34,10 +36,19 @@ private:
 
     float laneWidth = 70; // need to have track laneWidth func
 
-    float minVelocity = 10;
-    float maxVelocity = 50;
+    float minVelocity = 10.0;
+    float maxVelocity = 50.0; //60
+
+    int turnTimerThres = 34;
+    int frameCounterThres = 30;
+    int velocityDecay = 22;
+    int curveError = 17;
 
     float preError;
+	bool turnLeft = false;
+	bool turnRight = false;
+	int frameCounter = 0;
+	int turnTimer = 0;
 
     float kP;  //haven't used
     float kI;

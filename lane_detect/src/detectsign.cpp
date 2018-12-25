@@ -6,32 +6,34 @@ Mat DetectSign::None = Mat::zeros(Size(0,0),CV_64FC3);
 
 DetectSign::DetectSign()
 {
-    cvCreateTrackbar("LowHH", "Threshold", &minThreshold[0], 179); //(Varname, Windowname, currentval, maxval)
-    cvCreateTrackbar("HighHH", "Threshold", &maxThreshold[0], 179);
+    //cvCreateTrackbar("LowHH", "Threshold", &minThreshold[0], 179); //(Varname, Windowname, currentval, maxval)
+    //cvCreateTrackbar("HighHH", "Threshold", &maxThreshold[0], 179);
 
-    cvCreateTrackbar("LowSS", "Threshold", &minThreshold[1], 255);
-    cvCreateTrackbar("HighSS", "Threshold", &maxThreshold[1], 255);
+    //cvCreateTrackbar("LowSS", "Threshold", &minThreshold[1], 255);
+    //cvCreateTrackbar("HighSS", "Threshold", &maxThreshold[1], 255);
 
-    cvCreateTrackbar("LowVV", "Threshold", &minThreshold[2], 255);
-    cvCreateTrackbar("HighVV", "Threshold", &maxThreshold[2], 255);
+    //cvCreateTrackbar("LowVV", "Threshold", &minThreshold[2], 255);
+    //cvCreateTrackbar("HighVV", "Threshold", &maxThreshold[2], 255);
 }
 
 DetectSign::~DetectSign(){}
 
-int DetectSign::updateSign(const Mat &src)
+std::pair<int, float> DetectSign::updateSign(const Mat &src)
 {
-    Mat circleImg = detectCircle(src);
+    std::pair<Mat, float> circleImg = detectCircle(src);
     //cv::imshow("Circle",circleImg);
-    Mat arrowImg = arrowRegion(circleImg);
+    Mat arrowImg = arrowRegion(circleImg.first);
     int signType =100;
     signType = identifySign(arrowImg);
-    return signType;
+    Point carPosition = Point(120, 300);
+    // double dist = cv::norm(circleImg.second - carPosition);
+    return make_pair(signType, circleImg.second);
 }
 
-Mat DetectSign::detectCircle(const Mat &src)
+std::pair<Mat, float> DetectSign::detectCircle(const Mat &src)
 {
     Mat imgThresholded, imgHSV, dst, circleImg = None;
-
+    float area = 0.0;
     cvtColor(src, imgHSV, COLOR_BGR2HSV);
     inRange(imgHSV, Scalar(minThreshold[0], minThreshold[1], minThreshold[2]),
         Scalar(maxThreshold[0], maxThreshold[1], maxThreshold[2]),
@@ -76,10 +78,13 @@ Mat DetectSign::detectCircle(const Mat &src)
         if((r-l)*(d-t) > 500) //check S(circleCnt)
             {
                 Rect roi(l,t,r-l,d-t);
+                //p = (roi.br() + roi.tl()) * 0.5;
+                area = (float) (roi.width * roi.height);
                 circleImg = Mat(src,roi);
+                //std::cout<<area<<std::endl;
             }
     }
-    return circleImg;
+    return std::make_pair(circleImg, area);
 }
 
 Mat DetectSign::arrowRegion(const Mat &circleImg)

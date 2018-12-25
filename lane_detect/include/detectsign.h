@@ -23,8 +23,8 @@ public:
     static int VIEW_HEIGHT;
     static Mat None;
 
-    int updateSign(const Mat &src);
-    Mat detectCircle(const Mat &src);
+    pair<int, float> updateSign(const Mat &src);
+    pair<Mat, float> detectCircle(const Mat &src);
     Mat arrowRegion(const Mat &circleImg);
     int identifySign(const Mat &arrowImg);   // 1,2,3 is right,left,None
 

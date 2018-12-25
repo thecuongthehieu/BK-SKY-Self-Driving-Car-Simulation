@@ -6,6 +6,7 @@
 
 #include "detectlane.h"
 #include "carcontrol.h"
+#include "detectsign.h"
 #include<iostream>
 
 
@@ -14,6 +15,7 @@ bool STREAM = true;
 VideoCapture capture("video.avi");
 DetectLane *detect;
 CarControl *car;
+DetectSign *sign;
 int skipFrame = 1;
 
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
@@ -30,7 +32,11 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         waitKey(1);  // time of showing each frame
         detect->update(cv_ptr->image);  //cv_ptr-> image (320x240) is input Mat of detectlane
         // after update vector (size =32) left and right point so call driverCar to control car
-        car->driverCar(detect->getLeftLane(), detect->getRightLane(), 40);
+		auto leftLane = detect->getLeftLane();
+		auto rightLane = detect->getRightLane();
+		auto signDetected = sign->updateSign(cv_ptr->image);
+        car->driverCar(leftLane, rightLane, car->getVelocity(leftLane, rightLane,true), signDetected.first,
+		signDetected.second); //first = signType, second = area of Sign
     }
     catch (cv_bridge::Exception& e)
     {
@@ -65,6 +71,7 @@ int main(int argc, char **argv)
 
     detect = new DetectLane();
     car = new CarControl();
+    sign = new DetectSign();
 
     if (STREAM) {
 

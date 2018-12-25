@@ -14,8 +14,8 @@ Point DetectLane::null = Point();
 
 DetectLane::DetectLane() {
    
-    cvCreateTrackbar("getPerspectiveVar", "Threshold", &birdViewvar, 200); //add 
-    cvCreateTrackbar("skyLine", "Threshold", &skyLine, 320); //add
+    //cvCreateTrackbar("getPerspectiveVar", "Threshold", &birdViewvar, 200); //add 
+    //cvCreateTrackbar("skyLine", "Threshold", &skyLine, 320); //add
 
 
 
@@ -38,7 +38,7 @@ DetectLane::DetectLane() {
     cvCreateTrackbar("Low2V", "Threshold", &minLaneInShadow[2], 255);
     cvCreateTrackbar("High2V", "Threshold", &maxLaneInShadow[2], 255);
 
-    cvCreateTrackbar("Shadow Param", "Threshold", &shadowParam, 255);
+    //cvCreateTrackbar("Shadow Param", "Threshold", &shadowParam, 255);
 
 }
 
@@ -139,7 +139,8 @@ Mat DetectLane::preProcess(const Mat &src)
 
 
 
-    GaussianBlur(imgThresholded,imgThresholded, Size(5, 5), 0,0); //Blurring to reduce high frequency noise
+    GaussianBlur(imgThresholded,imgThresholded, Size(3, 3), 0,0); //Blurring to reduce high frequency noise
+
     dst = birdViewTranform(imgThresholded);
 
     imshow("Bird View", dst);
@@ -155,7 +156,7 @@ Mat DetectLane::laneInShadow(const Mat &src)
 {
     Mat laneShadow, imgHSV, dst;
     cvtColor(src, imgHSV, COLOR_BGR2HSV);
-    imshow("imgHSV",imgHSV);
+    //imshow("imgHSV",imgHSV);
 
     inRange(imgHSV, Scalar(minLaneInShadow[0], minLaneInShadow[1], minLaneInShadow[2]),
         Scalar(maxLaneInShadow[0], maxLaneInShadow[1], maxLaneInShadow[2]),
