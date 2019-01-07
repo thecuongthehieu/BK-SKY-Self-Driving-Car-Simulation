@@ -6,14 +6,14 @@ Mat DetectSign::None = Mat::zeros(Size(0,0),CV_64FC3);
 
 DetectSign::DetectSign()
 {
-    //cvCreateTrackbar("LowHH", "Threshold", &minThreshold[0], 179); //(Varname, Windowname, currentval, maxval)
-    //cvCreateTrackbar("HighHH", "Threshold", &maxThreshold[0], 179);
+    /*cvCreateTrackbar("LowHH", "SignThreshold", &minThreshold[0], 179); //(Varname, Windowname, currentval, maxval)
+    cvCreateTrackbar("HighHH", "SignThreshold", &maxThreshold[0], 179);
 
-    //cvCreateTrackbar("LowSS", "Threshold", &minThreshold[1], 255);
-    //cvCreateTrackbar("HighSS", "Threshold", &maxThreshold[1], 255);
+    cvCreateTrackbar("LowSS", "SignThreshold", &minThreshold[1], 255);
+    cvCreateTrackbar("HighSS", "SignThreshold", &maxThreshold[1], 255);
 
-    //cvCreateTrackbar("LowVV", "Threshold", &minThreshold[2], 255);
-    //cvCreateTrackbar("HighVV", "Threshold", &maxThreshold[2], 255);
+    cvCreateTrackbar("LowVV", "SignThreshold", &minThreshold[2], 255);
+    cvCreateTrackbar("HighVV", "SignThreshold", &maxThreshold[2], 255);*/
 }
 
 DetectSign::~DetectSign(){}

@@ -1,25 +1,28 @@
 #include "carcontrol.h"
-#include "detectsign.h"
-#include "unistd.h" // lib for time sleep from detect sign to adjust angle
-
 
 
 CarControl::CarControl()
 {
     
-    //cvCreateTrackbar("laneWidth", "Threshold", current_var, max);
-    //cvCreateTrackbar("startpoint (=11)", "Threshold", current_var, max);
-    //cvCreateTrackbar("fractionOfdist (= 4.0)")", "Threshold", current_var, max);
-    cvCreateTrackbar("timeThres", "Threshold", &turnTimerThres, 100);
-    cvCreateTrackbar("frameThres", "Threshold", &frameCounterThres, 100);
-    cvCreateTrackbar("velocityDecay", "Threshold", &velocityDecay, 300);
-    cvCreateTrackbar("curveError", "Threshold", &curveError, 50);
+    //cvCreateTrackbar("laneWidth", "CarControl", current_var, max);
+    //cvCreateTrackbar("startpoint (=11)", "CarControl", current_var, max);
+    //cvCreateTrackbar("fractionOfdist (= 4.0)")", "CarControl", current_var, max);
+    cvCreateTrackbar("LaneFraction", "CarControl", &laneFraction, 100); // Turn when we have middle lane and Right or Left 
+    
+    cvCreateTrackbar("errorThres", "CarControl", &errorThres, 100);
+    cvCreateTrackbar("wThreshold", "CarControl", &wThres, 100);
+    cvCreateTrackbar("deltaW", "CarControl", &deltaW, 120);
+    cvCreateTrackbar("maxVelocity", "CarControl", &maxVelocity, 120);
+    cvCreateTrackbar("timeThres", "CarControl", &turnTimerThres, 100);
+    cvCreateTrackbar("frameThres", "CarControl", &frameCounterThres, 100);
+    cvCreateTrackbar("velocityDecay", "CarControl", &velocityDecay, 300);
+    cvCreateTrackbar("curveError", "CarControld", &curveError, 50);
 
 
     carPos.x = 120;
     carPos.y = 300;
-    steer_publisher = node_obj1.advertise<std_msgs::Float32>("Team1_steerAngle",10);
-    speed_publisher = node_obj2.advertise<std_msgs::Float32>("Team1_speed",10);
+    steer_publisher = node_obj1.advertise<std_msgs::Float32>("team805_steerAngle",10);
+    speed_publisher = node_obj2.advertise<std_msgs::Float32>("team805_speed",10);
 }
 
 CarControl::~CarControl() {}
@@ -38,10 +41,10 @@ float CarControl::errorAngle(const Point &dst)
 
 
 float CarControl::getVelocity(const vector<Point> &leftLane, const vector<Point> &rightLane, bool flag) {
-	// detect sign velocity decrease law
-	float velocity = maxVelocity;
+    // detect sign velocity decrease law
+    float velocity = float(maxVelocity);
     if(flag)
-        velocity = maxVelocity - (float(velocityDecay)/100)*frameCounter; //50 : 0,4
+        velocity = float(maxVelocity) - (float(velocityDecay)/100)*frameCounter; //50 : 0,4
     
     else
     {
@@ -58,7 +61,7 @@ float CarControl::getVelocity(const vector<Point> &leftLane, const vector<Point>
             {
                 float w = (nullLeft + nullRight) / (2.0 * leftLane.size());
                 //cout<<w<<endl;
-                w < 0.6 ? velocity = (w+0.25) * maxVelocity : velocity = maxVelocity;
+                w < float(wThres)/100 ? velocity = (w + float(deltaW)/100) * float(maxVelocity) : velocity = float(maxVelocity);
 
             }
     }
@@ -67,7 +70,7 @@ float CarControl::getVelocity(const vector<Point> &leftLane, const vector<Point>
 
 
 bool CarControl::checkTurningPoint() {
-	return frameCounter >= frameCounterThres;
+    return frameCounter >= frameCounterThres;
 }
 
 void CarControl::driverCar(const vector<Point> &left, const vector<Point> &right, float velocity, int st, float
@@ -78,7 +81,7 @@ area)//add st as left/right/unknown
     while (left[i] == DetectLane::null && right[i] == DetectLane::null) {
         i--;
         if (i < 0) return;
-	}
+    }
 
     int leftPoints = 0;
     for (int i = 0; i < left.size(); i++) {
@@ -90,8 +93,9 @@ area)//add st as left/right/unknown
         if (right[i] != DetectLane::null) rightPoints++;
     }
 
+    //std::cout<<leftPoints<<std::endl;  = 6,7,8
 
-	if (turnTimer >= turnTimerThres ) {
+    if (turnTimer >= turnTimerThres ) {
 
         //set for the second 
         turnRight = false;
@@ -103,92 +107,88 @@ area)//add st as left/right/unknown
 
         frameCounter = 0;
         turnTimer = 0;
-	}
+    }
 
 
-	if (turnRight || turnLeft) {
-		frameCounter++;  
-	}
+    if (turnRight || turnLeft) {
+        frameCounter++;  
+    }
     //cout<<"ok"<<endl;
     //cout<<frameCounter<<endl;
 
-	bool check = checkTurningPoint();
+    bool check = checkTurningPoint();
 
-	if (turnRight && check) {
-		cout << "turn time right " << turnTimer << endl;
-		error = curveError;
-		turnTimer++;
+    if (turnRight && check) {
+        cout << "turn time right " << turnTimer << endl;
+        error = curveError;
+        turnTimer++;
         frameCounterThres = 0;
         frameCounter = 0;
-	} else if (turnLeft && check) {
-		cout << "turn time left " << turnTimer << endl;
+    } else if (turnLeft && check) {
+        cout << "turn time left " << turnTimer << endl;
         error = -curveError;
-		turnTimer++;
+        turnTimer++;
         frameCounterThres = 0;
         frameCounter = 0;
-		
-	} else {
+        
+    } else {
 
-		if (st == 0 && area >= 500.0) {
-			// turn right
-			// frameCounter++;
-			turnRight = true;
-			turnLeft = false;
+        if (st == 0 && area >= 500.0) {
+            // turn right
+            // frameCounter++;
+            turnRight = true;
+            turnLeft = false;
 
-		} else if (st == 1 && area >= 500.0) {
-			// turn left
-			// frameCounter++;
-			//cout << "turn left" << endl;
-			turnLeft = true;
-			turnRight = false;
-		} 
+        } else if (st == 1 && area >= 500.0) {
+            // turn left
+            // frameCounter++;
+            //cout << "turn left" << endl;
+            turnLeft = true;
+            turnRight = false;
+        } 
 
+        if (left[i] != DetectLane::null && right[i] !=  DetectLane::null)
+        {
+            error = errorAngle((left[i] + right[i]) / 2);
 
-		if (left[i] != DetectLane::null && right[i] !=  DetectLane::null)
-		{
-			//std::cout<<(right[i]-left[i])<<std::endl;
-            //std::cout<<leftPoint<<std::endl;
-            Point tmp = right[i] - left[i];
-            if(tmp.x <= laneWidth/2)  //////////turning
-            {
-                if(leftPoints <= 8)
-                    error = errorAngle(left[i]);
-                else if(rightPoints <= 8)
-                    error = errorAngle(right[i]);
-            }
-            else 
-                error = errorAngle((left[i] + right[i]) / 2);
-
-		} 
-		else if (left[i] != DetectLane::null)
-		{
-			if(leftPoints <= 8)///////////////////////////turnning
-                i--;
-            else 
-                error = errorAngle(left[i] + Point(laneWidth / 2.3, 0));  //Need to tunning
-		}
-		else
-		{
-            if(rightPoints <=8)
-                i--;
-			else
-                error = errorAngle(right[i] - Point(laneWidth / 2.3, 0));
-		}
-
+        } 
+        else if (left[i] != DetectLane::null)
+        {
+            if(5 <= leftPoints && leftPoints <= 8) //check middle lane
+                {
+                    error = -45;
+                    //cout<<"@@@@@@@@@@@@@@@@@@@@@"<<endl;
+                    goto endLabel;
+                }
+            else
+                error = errorAngle(left[i] + Point(laneWidth * float(laneFraction)/100, 0));  
+        }
+        else
+        {
+            
+            if(5 <= rightPoints && rightPoints <= 8)
+                {
+                    error = 45;
+                    //cout<<"@@@@@@@@@@@@@@@@@@@@@"<<endl;
+                    goto endLabel;
+                }
+            else
+                error = errorAngle(right[i] - Point(laneWidth * float(laneFraction)/100 , 0));
+        }
 
         
         if(turnLeft)
-            error = 0.45; //to curve
+            error = 0.45; //to curve   
         else if(turnRight)
-            error = -0.45;
+            error = -0.45;  //////////////////// need to turnning
 
-        if(!turnLeft && !turnRight && abs(error) >= 1.5)
+        if(!turnLeft && !turnRight && abs(error) >= float(errorThres)/10)  // need to check 5
         {   
             velocity = getVelocity(left,right,false);
         }
 
-
-	}
+        endLabel: ;
+    }
     //cout<<error<<endl;
     std_msgs::Float32 angle;
     std_msgs::Float32 speed;

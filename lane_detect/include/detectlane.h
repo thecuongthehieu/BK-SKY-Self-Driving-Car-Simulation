@@ -48,7 +48,7 @@ private:
     Mat laneInShadow(const Mat &src);
 
 
-    int minThreshold[3] = {80, 0, 215};
+    int minThreshold[3] = {80, 0, 177};
     int maxThreshold[3] = {127, 255, 255};
     
     //int minShadowTh[3] = {90, 43, 36};

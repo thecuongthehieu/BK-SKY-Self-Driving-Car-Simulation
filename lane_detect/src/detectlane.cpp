@@ -14,29 +14,29 @@ Point DetectLane::null = Point();
 
 DetectLane::DetectLane() {
    
-    //cvCreateTrackbar("getPerspectiveVar", "Threshold", &birdViewvar, 200); //add 
-    //cvCreateTrackbar("skyLine", "Threshold", &skyLine, 320); //add
+    cvCreateTrackbar("getPerspectiveVar", "LaneThreshold", &birdViewvar, 200); //add 
+    cvCreateTrackbar("skyLine", "LaneThreshold", &skyLine, 320); //add
 
 
 
-    cvCreateTrackbar("LowH", "Threshold", &minThreshold[0], 179); //(Varname, Windowname, currentval, maxval) 
-    cvCreateTrackbar("HighH", "Threshold", &maxThreshold[0], 179);
+    cvCreateTrackbar("LowH", "LaneThreshold", &minThreshold[0], 179); //(Varname, Windowname, currentval, maxval) 
+    cvCreateTrackbar("HighH", "LaneThreshold", &maxThreshold[0], 179);
 
-    cvCreateTrackbar("LowS", "Threshold", &minThreshold[1], 255);
-    cvCreateTrackbar("HighS", "Threshold", &maxThreshold[1], 255);
+    cvCreateTrackbar("LowS", "LaneThreshold", &minThreshold[1], 255);
+    cvCreateTrackbar("HighS", "LaneThreshold", &maxThreshold[1], 255);
 
-    cvCreateTrackbar("LowV", "Threshold", &minThreshold[2], 255);
-    cvCreateTrackbar("HighV", "Threshold", &maxThreshold[2], 255);
+    cvCreateTrackbar("LowV", "LaneThreshold", &minThreshold[2], 255);
+    cvCreateTrackbar("HighV", "LaneThreshold", &maxThreshold[2], 255);
 
 
-    cvCreateTrackbar("Low2H", "Threshold", &minLaneInShadow[0], 179); //(Varname, Windowname, currentval, maxval) 
-    cvCreateTrackbar("High2H", "Threshold", &maxLaneInShadow[0], 179);
+    cvCreateTrackbar("Low2H", "LaneThreshold", &minLaneInShadow[0], 179); //(Varname, Windowname, currentval, maxval) 
+    cvCreateTrackbar("High2H", "LaneThreshold", &maxLaneInShadow[0], 179);
 
-    cvCreateTrackbar("Low2S", "Threshold", &minLaneInShadow[1], 255);
-    cvCreateTrackbar("High2S", "Threshold", &maxLaneInShadow[1], 255);
+    cvCreateTrackbar("Low2S", "LaneThreshold", &minLaneInShadow[1], 255);
+    cvCreateTrackbar("High2S", "LaneThreshold", &maxLaneInShadow[1], 255);
 
-    cvCreateTrackbar("Low2V", "Threshold", &minLaneInShadow[2], 255);
-    cvCreateTrackbar("High2V", "Threshold", &maxLaneInShadow[2], 255);
+    cvCreateTrackbar("Low2V", "LaneThreshold", &minLaneInShadow[2], 255);
+    cvCreateTrackbar("High2V", "LaneThreshold", &maxLaneInShadow[2], 255);
 
     //cvCreateTrackbar("Shadow Param", "Threshold", &shadowParam, 255);
 
@@ -111,8 +111,11 @@ void DetectLane::update(const Mat &src)
 Mat DetectLane::preProcess(const Mat &src)
 {
     Mat imgThresholded, imgHSV, dst;
+
     cvtColor(src, imgHSV, COLOR_BGR2HSV);
     //imshow("imgHSV",imgHSV);
+    Mat temp = birdViewTranform(imgHSV);
+    imshow("birdView_RGB",temp);
     //int minThreshold[3] = {0, 0, 180};
     //int maxThreshold[3] = {179, 30, 255};
     inRange(imgHSV, Scalar(minThreshold[0], minThreshold[1], minThreshold[2]),
@@ -121,12 +124,12 @@ Mat DetectLane::preProcess(const Mat &src)
 
     //imgThresholded = laneInShadow(src);
 
-    imshow("Lane Norm", imgThresholded);
+    imshow("Lane Norm", imgThresholded); //----------------------------------------------------
 
 
     //Combine 2 IMG to have full Lane
     Mat laneShadow = laneInShadow(src);
-    imshow("Lane Shadow", laneShadow);
+    imshow("Lane Shadow", laneShadow);  //----------------------------------------------------
     for(int i = 0; i < imgThresholded.rows; i++)
         for(int j = 0; j < imgThresholded.cols; j++)
             {

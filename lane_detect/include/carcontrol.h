@@ -11,6 +11,8 @@
 #include <math.h>
 
 #include "detectlane.h"
+#include "detectsign.h"
+#include "unistd.h" // lib for time sleep from detect sign to adjust angle
 
 using namespace std;
 using namespace cv;
@@ -35,14 +37,20 @@ private:
     Point carPos;
 
     float laneWidth = 70; // need to have track laneWidth func
+    int laneFraction = 41;
 
     float minVelocity = 10.0;
-    float maxVelocity = 50.0; //60
+    int maxVelocity = 50; ////////////////60
+    int deltaW = 30;   //////////When go slowly
+    int wThres = 60;   // When we have a few points
+    int errorThres = 20;  //When we decrese velocity
 
-    int turnTimerThres = 34;
-    int frameCounterThres = 30;
-    int velocityDecay = 22;
-    int curveError = 17;
+
+
+    int turnTimerThres = 34;   //Time to curve
+    int frameCounterThres = 30;  //Frame to curve
+    int velocityDecay = 22;  //Decrese velocity When curve
+    int curveError = 17;  //error of curving
 
     float preError;
 	bool turnLeft = false;
