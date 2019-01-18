@@ -313,7 +313,7 @@ void DetectLane::detectLeftRight(const vector<vector<Point> > &points) //vector<
             for (int m = 1; m < min(points.size() - 1 - i, 5); m++)
             {
                 bool check = false;
-                for (int k = 0; k < points[i + 1].size(); k ++)
+                for (int k = 0; k < points[i + m].size(); k ++) ///////////////m->1
                 {
                     if (abs(points[i + m][k].x - points[i][j].x) < dis && 
                     abs(points[i + m][k].x - points[i][j].x) < err) {
@@ -346,6 +346,8 @@ void DetectLane::detectLeftRight(const vector<vector<Point> > &points) //vector<
             }
         }
     }
+
+    //cout << points[posMax.x][posMax.y] << endl << points[posMax2.x][posMax2.y];
 
     if (max == -1) return;
 
@@ -411,6 +413,8 @@ void DetectLane::detectLeftRight(const vector<vector<Point> > &points) //vector<
             rightLane[floor(lane1[i].y / slideThickness)] = lane1[i];
         }
     }
+
+    //cout << leftLane[10] - rightLane[10] << endl;
 }
 
 

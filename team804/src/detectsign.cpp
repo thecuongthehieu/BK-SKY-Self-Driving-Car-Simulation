@@ -25,7 +25,7 @@ std::pair<int, float> DetectSign::updateSign(const Mat &src)
     Mat arrowImg = arrowRegion(circleImg.first);
     int signType =100;
     signType = identifySign(arrowImg);
-    Point carPosition = Point(120, 300);
+    //std::cout<<signType<<endl;
     // double dist = cv::norm(circleImg.second - carPosition);
     return make_pair(signType, circleImg.second);
 }

@@ -7,22 +7,22 @@ CarControl::CarControl()
     //cvCreateTrackbar("laneWidth", "CarControl", current_var, max);
     //cvCreateTrackbar("startpoint (=11)", "CarControl", current_var, max);
     //cvCreateTrackbar("fractionOfdist (= 4.0)")", "CarControl", current_var, max);
-    cvCreateTrackbar("LaneFraction", "CarControl", &laneFraction, 100); // Turn when we have middle lane and Right or Left 
+    cvCreateTrackbar("LaneFraction", "CarCtrl", &laneFraction, 100); // Turn when we have middle lane and Right or Left 
     
-    cvCreateTrackbar("errorThres", "CarControl", &errorThres, 100);
-    cvCreateTrackbar("wThreshold", "CarControl", &wThres, 100);
-    cvCreateTrackbar("deltaW", "CarControl", &deltaW, 120);
-    cvCreateTrackbar("maxVelocity", "CarControl", &maxVelocity, 120);
-    cvCreateTrackbar("timeThres", "CarControl", &turnTimerThres, 100);
-    cvCreateTrackbar("frameThres", "CarControl", &frameCounterThres, 100);
-    cvCreateTrackbar("velocityDecay", "CarControl", &velocityDecay, 300);
-    cvCreateTrackbar("curveError", "CarControld", &curveError, 50);
+    cvCreateTrackbar("errorThres", "CarCtrl", &errorThres, 100);
+    cvCreateTrackbar("wThreshold", "CarCtrl", &wThres, 100);
+    cvCreateTrackbar("deltaW", "CarCtrl", &deltaW, 120);
+    cvCreateTrackbar("maxVelocity", "CarCtrl", &maxVelocity, 120);
+    cvCreateTrackbar("timeThres", "CarCtrl", &turnTimerThres, 100);
+    cvCreateTrackbar("frameThres", "CarCtrl", &frameCounterThres, 100);
+    cvCreateTrackbar("velocityDecay", "CarCtrl", &velocityDecay, 300);
+    cvCreateTrackbar("curveError", "CarCtrl", &curveError, 50);
 
 
     carPos.x = 120;
     carPos.y = 300;
-    steer_publisher = node_obj1.advertise<std_msgs::Float32>("team805_steerAngle",10);
-    speed_publisher = node_obj2.advertise<std_msgs::Float32>("team805_speed",10);
+    steer_publisher = node_obj1.advertise<std_msgs::Float32>("team804_steerAngle",10);
+    speed_publisher = node_obj2.advertise<std_msgs::Float32>("team804_speed",10);
 }
 
 CarControl::~CarControl() {}
@@ -119,13 +119,13 @@ area)//add st as left/right/unknown
     bool check = checkTurningPoint();
 
     if (turnRight && check) {
-        cout << "turn time right " << turnTimer << endl;
+        //cout << "turn time right " << turnTimer << endl;
         error = curveError;
         turnTimer++;
         frameCounterThres = 0;
         frameCounter = 0;
     } else if (turnLeft && check) {
-        cout << "turn time left " << turnTimer << endl;
+        //cout << "turn time left " << turnTimer << endl;
         error = -curveError;
         turnTimer++;
         frameCounterThres = 0;
@@ -156,7 +156,7 @@ area)//add st as left/right/unknown
         {
             if(5 <= leftPoints && leftPoints <= 8) //check middle lane
                 {
-                    error = -45;
+                    error = -45; //avoid obstruction
                     //cout<<"@@@@@@@@@@@@@@@@@@@@@"<<endl;
                     goto endLabel;
                 }
@@ -177,10 +177,10 @@ area)//add st as left/right/unknown
         }
 
         
-        if(turnLeft)
+        /*if(turnLeft)
             error = 0.45; //to curve   
         else if(turnRight)
-            error = -0.45;  //////////////////// need to turnning
+            error = -0.45;  //////////////////// need to turnning */
 
         if(!turnLeft && !turnRight && abs(error) >= float(errorThres)/10)  // need to check 5
         {   

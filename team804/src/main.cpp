@@ -65,7 +65,7 @@ int main(int argc, char **argv)
     cv::namedWindow("View");
     cv::namedWindow("Binary");
     cv::namedWindow("LaneThreshold");
-    cv::namedWindow("CarControl");
+    cv::namedWindow("CarCtrl");
     //cv::namedWindow("SignThreshold");
     cv::namedWindow("Bird View");
     cv::namedWindow("Lane Detect");
@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 
         ros::NodeHandle nh;
         image_transport::ImageTransport it(nh);
-        image_transport::Subscriber sub = it.subscribe("team805_image", 1, imageCallback);
+        image_transport::Subscriber sub = it.subscribe("team804_image", 1, imageCallback);
 
         ros::spin();
     } else {
